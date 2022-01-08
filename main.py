@@ -8,6 +8,7 @@ from typing import List, Optional
 
 import PySimpleGUI as sg
 
+import scribe
 from config import Config
 from meta import Meta
 from playlist import Playlist
@@ -58,35 +59,43 @@ def pl_status(pl):
 def main():
     db = SongDB()
     config = Config()
+    meta = Meta()
     tp = ThreadPoolExecutor(config.jobs)
 
     playlists = [Playlist(**pl) for pl in config.config.playlists]
 
     layout = [prepare_pl_frame(pl) for pl in playlists]
     layout.append([
-        sg.Button("Update Database", size=(20, 2), k="DB Update")
+        sg.Button("Update Database", size=(20, 2), k="DB Update"),
+        sg.Button("Name Tool", size=(20, 2), k="Open Name Tool")
     ])
     print(layout)
 
-    main_window = sg.Window("YT Local Playlist Manager", disable_minimize=True, resizable=True)
-    main_window.layout(layout)
-    main_window.finalize()
+    main_window = sg.Window("YT Local Playlist Manager", resizable=True,
+                            layout=layout, finalize=True)
 
     dl_queue = Queue()
     dl_window: Optional[sg.Window] = None
     dl_pl: Optional[Playlist] = None
     futures = []
 
+    meta_wind: Optional[sg.Window] = None
+
     while True:
-        window, event, values = sg.read_all_windows(200, "TIMEOUT")
+        window, event, values = sg.read_all_windows(2000, "TIMEOUT")
 
         if window is None and event is None and values is None:
             break
         elif event == sg.WIN_CLOSED:
+            if window is meta_wind:
+                meta_wind = None
             window.close()
         # region Tagged Events
         elif event == 'TIMEOUT':
             if len(futures) > 0 and all(fut.done() for fut in futures):
+                for fut in futures:
+                    if fut.exception() is not None:
+                        raise fut.exception()
                 dl_window.close()
                 dl_window = None
                 futures.clear()
@@ -105,53 +114,51 @@ def main():
             for pl in playlists:
                 for song in pl.playlist_meta:
                     if song.videoId not in db.files:
+                        print(song.videoId)
                         db.add_song(song)
             db.save()
+        elif event == "Open Name Tool":
+            if meta_wind is None:
+                meta_wind = meta.get_naming_window()
+
         # endregion Tagged Events
 
         if type(event) is not tuple:
             continue
 
-        pl: Playlist
-        action: str
-        pl, action = event
-        if action == "copy":
-            songs, _ = pl.results
-            for song in [f'{name}.m4a' for name in songs if name in db.files]:
-                if not Path.exists(pl.location / song):
-                    os.symlink(db.songPath / song, pl.location / song)
+        ctx, action = event
+        # region Playlist Events
+        if type(ctx) == Playlist:
+            pl: Playlist
+            pl = ctx
+            if action == "copy":
+                songs, _ = pl.results
+                for entry, song in [(db.db[name], f'{name}.m4a') for name in songs if name in db.files]:
+                    if entry.status is None or "N" not in entry.status:
+                        pass
+                    scribe.write_tags(db.songPath, song, entry)
+                    if not Path.exists(pl.location / song):
+                        os.link(db.songPath / song, pl.location / song)
+                db.save()
 
-        if action == "download" and dl_window is None:
-            songs, _ = pl.results
-            needed = [song for song in songs if song not in db.files]
-            print(needed)
-            if len(needed) > 0:
-                dl_window = open_dl_window(config.jobs)
-                dl_pl = pl
-                for song in needed:
-                    dl_queue.put(song)
-                for i in range(config.jobs):
-                    fut = tp.submit(db.multi_fetch, dl_window[f'DL-{i}'], dl_window[f'PROG-{i}'], dl_queue)
-                    futures.append(fut)
+            if action == "download" and dl_window is None:
+                songs, _ = pl.results
+                needed = [song for song in songs if song not in db.files]
+                print(needed)
+                if len(needed) > 0:
+                    dl_window = open_dl_window(config.jobs)
+                    dl_pl = pl
+                    for song in needed:
+                        dl_queue.put(song)
+                    print(dl_queue.qsize())
+                    for i in range(config.jobs):
+                        fut = tp.submit(db.multi_fetch, dl_window[f'DL-{i}'], dl_window[f'PROG-{i}'], dl_queue)
+                        futures.append(fut)
+        elif ctx == meta:
+            meta.handle_event(window, event, values)
+        # endregion Playlist Events
 
     exit()
-    pl = Playlist(name="NC", id="PL7JI1mew7ENIMi12OjOrhlMUhVwnYG_w_", location="D:/music/playlists/Nightcore")
-    _, missing = pl.results
-    # foo = pl.retrieve_playlist()
-    # songs = SongDB()
-    # for song in foo:
-    #     songs.add_song(song)
-    # songs.save()
-    # print(len(songs.db))
-    # print(len(songs.db.keys()))
-    # needed = [song for song in songs.db.keys() if song not in songs.files]
-    # print(len(needed))
-
-    meta = Meta()
-    meta.getname("Nightcore - For Life", "UCRI2AItOVJ4WIlSvIZGN40Q")
-
-    # for song in needed:
-    #     songs.fetch_song(song)
 
 
 if __name__ == "__main__":

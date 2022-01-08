@@ -5,7 +5,7 @@ from os import listdir
 from os.path import isfile, join
 from pathlib import Path
 from queue import Queue
-from typing import Union, Set, Callable, Optional
+from typing import Union, Set, Callable, Optional, Tuple, List, Dict
 
 import PySimpleGUI as sg
 from yt_dlp import YoutubeDL, DownloadError
@@ -20,6 +20,10 @@ class SongDB:
     dbFile: Path
     db: Edict
     files: Set[str]
+    channels: Set[Tuple[str, str]]
+    songs_by_channel: Dict[str, List[str]]
+    missing_names: Set[str]
+    missing_artists: Set[str]
 
     def __new__(cls):
         if cls._instance is None:
@@ -28,6 +32,11 @@ class SongDB:
 
     def __init__(self):
         config = Config()
+        self.channels = set()
+        self.missing_names = set()
+        self.missing_artists = set()
+        self.songs_by_channel = {}
+
         self.songPath = Path(config.config.paths.songs)
         self.dbFile = self.songPath / "songDB.json"
         if not self.songPath.exists():
@@ -42,6 +51,21 @@ class SongDB:
         self.files = set(f[:-4] for f in listdir(self.songPath)
                          if isfile(join(self.songPath, f))
                          and f[-4:] == '.m4a')
+        self.calc_meta()
+
+    def calc_meta(self):
+        self.songs_by_channel = {}
+        for id, entry in self.db.items():
+            if entry.ownerId in self.songs_by_channel:
+                self.songs_by_channel[entry.ownerId].append(id)
+            else:
+                self.songs_by_channel[entry.ownerId] = [id]
+            if entry.name is None:
+                self.missing_names.add(id)
+            if entry.artist is None:
+                self.missing_artists.add(id)
+            if (entry.ownerId, entry.ownerName) not in self.channels:
+                self.channels.add((entry.ownerId, entry.ownerName))
 
     def save(self):
         with open(self.dbFile, 'w') as db:
@@ -102,6 +126,10 @@ class SongDB:
                 song_id = inq.get_nowait()
             except queue.Empty:
                 return
-            frame.update(self.db[song_id].title)
+            print("Down - 1")
+            frame.update(self.db[song_id]['title'])
+            print("Down - 2")
             bar.update(0)
+            print("Down - 3")
             self.fetch_song(song_id, hook)
+            print("Down - 4")
