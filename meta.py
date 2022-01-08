@@ -85,17 +85,6 @@ class Meta:
         with open(self.handler_path, 'w') as handlers:
             json.dump(self.handlers, handlers, indent=2)
 
-    def get_name(self, title: str, id: str) -> Union[str, None]:
-        print(self.handlers.keys())
-        if id not in self.handlers.keys():
-            print("skipping")
-            return None
-
-        print(self.handlers[id].items())
-        for key, value in self.handlers[id].items():
-            print(key)
-            print(value)
-
     def handle_event(self, window: sg.Window, event: 'Tuple[Meta, str]', values: dict):
         def update_ui(channel: Meta._ChannelData):
             window[(self, 'RE-ACTIVE')].update([r for r in self.handlers.channels[channel.id]])
