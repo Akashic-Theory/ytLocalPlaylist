@@ -126,10 +126,6 @@ class SongDB:
                 song_id = inq.get_nowait()
             except queue.Empty:
                 return
-            print("Down - 1")
             frame.update(self.db[song_id]['title'])
-            print("Down - 2")
             bar.update(0)
-            print("Down - 3")
             self.fetch_song(song_id, hook)
-            print("Down - 4")

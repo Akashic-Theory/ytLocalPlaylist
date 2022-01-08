@@ -114,7 +114,6 @@ class Meta:
         if action == 'CHANNELS':
             channel: Meta._ChannelData
             channel, = values[event]
-            print(channel)
             if channel.id not in self.handlers.channels:
                 self.handlers.channels[channel.id] = []
             update_ui(channel)
@@ -147,12 +146,10 @@ class Meta:
             songs: List[Meta._Transform]
             songs = values[(self, 'NAMES')]
             channel, = values[(self, 'CHANNELS')]
-            print(len(db.missing_names))
             for song in songs:
                 if song.result is not None:
                     db.db[song.id].name = song.result
                     db.missing_names.remove(song.id)
-            print(len(db.missing_names))
             db.save()
             update_ui(channel)
 

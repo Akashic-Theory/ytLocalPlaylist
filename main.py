@@ -1,8 +1,8 @@
+import json
 import os
 import queue
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from pprint import pprint
 from queue import Queue
 from typing import List, Optional
 
@@ -69,10 +69,11 @@ def main():
         sg.Button("Update Database", size=(20, 2), k="DB Update"),
         sg.Button("Name Tool", size=(20, 2), k="Open Name Tool")
     ])
-    print(layout)
 
     main_window = sg.Window("YT Local Playlist Manager", resizable=True,
                             layout=layout, finalize=True)
+
+    print(f'Launching App with config - \n {json.dumps(config.config, indent=4)}')
 
     dl_queue = Queue()
     dl_window: Optional[sg.Window] = None
@@ -114,7 +115,6 @@ def main():
             for pl in playlists:
                 for song in pl.playlist_meta:
                     if song.videoId not in db.files:
-                        print(song.videoId)
                         db.add_song(song)
             db.save()
         elif event == "Open Name Tool":
@@ -144,13 +144,11 @@ def main():
             if action == "download" and dl_window is None:
                 songs, _ = pl.results
                 needed = [song for song in songs if song not in db.files]
-                print(needed)
                 if len(needed) > 0:
                     dl_window = open_dl_window(config.jobs)
                     dl_pl = pl
                     for song in needed:
                         dl_queue.put(song)
-                    print(dl_queue.qsize())
                     for i in range(config.jobs):
                         fut = tp.submit(db.multi_fetch, dl_window[f'DL-{i}'], dl_window[f'PROG-{i}'], dl_queue)
                         futures.append(fut)

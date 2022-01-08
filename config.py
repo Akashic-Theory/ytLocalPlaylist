@@ -58,6 +58,5 @@ class Config:
             },
             'playlists': []
         }
-        print(config)
         with open('listconfig.json', 'x') as conf:
             json.dump(config, conf, indent=2)
