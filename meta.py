@@ -1,5 +1,4 @@
 import json
-import re
 from pathlib import Path
 from typing import Union, Tuple, List, Optional, Dict
 
@@ -8,62 +7,13 @@ from edict import Edict
 import PySimpleGUI as sg
 
 from songdb import SongDB
-from util import framed
+from util import framed, Regex, ChannelData, Transform
 
 
 class Meta:
     _handler_path: Path
     handlers: Edict
-    regexes: 'Dict[str, Meta._Regex]'
-
-    class _Regex:
-        name: str
-        pattern: str
-        repl: str
-
-        def __init__(self, name: str, pattern: str, repl: str):
-            self.name = name
-            self.pattern = pattern
-            self.repl = repl
-
-        def __str__(self):
-            return self.name
-
-        def parse(self, payload: str) -> Optional[str]:
-            if re.match(self.pattern, payload) is None:
-                return None
-            return re.sub(self.pattern, self.repl, payload)
-
-    class _ChannelData:
-        id: str
-        name: str
-        count: int
-
-        def __init__(self, id: str, name: str):
-            self.id = id
-            self.name = name
-            self.count = 1
-
-        def __str__(self):
-            return f'[{self.count:3}] {self.name}'
-
-        def inc(self):
-            self.count += 1
-
-    class _Transform:
-        id: str
-        title: str
-        result: Optional[str]
-
-        def __init__(self, id: str, db: SongDB = SongDB()):
-            self.id = id
-            self.title = db.db[id].title
-            self.result = None
-
-        def __str__(self):
-            if self.result is None:
-                return f'✗|{self.title}'
-            return f'✓|{self.result}'
+    regexes: 'Dict[str, Regex]'
 
     def __init__(self):
         config = Config()
@@ -79,7 +29,7 @@ class Meta:
             with open(self.handler_path, 'r', encoding='utf-8') as handlers:
                 self.handlers = Edict(json.load(handlers))
         for name, regex in self.handlers.regex.items():
-            self.regexes[name] = self._Regex(name, regex.pattern, regex.repl)
+            self.regexes[name] = Regex(name, regex.pattern, regex.repl)
 
     def save(self):
         with open(self.handler_path, 'w') as handlers:
@@ -88,7 +38,7 @@ class Meta:
     def handle_event(self, window: sg.Window, event: 'Tuple[Meta, str]', values: dict):
         def update_ui(channel: Meta._ChannelData):
             window[(self, 'RE-ACTIVE')].update([r for r in self.handlers.channels[channel.id]])
-            songs = [self._Transform(id) for id in db.songs_by_channel[channel.id]
+            songs = [Transform(id) for id in db.songs_by_channel[channel.id]
                      if db.db[id].name is None]
             regexes = [self.regexes[regex] for regex in self.handlers.channels[channel.id]]
             for song in songs:
@@ -101,14 +51,14 @@ class Meta:
         _, action = event
         db = SongDB()
         if action == 'CHANNELS':
-            channel: Meta._ChannelData
+            channel: ChannelData
             channel, = values[event]
             if channel.id not in self.handlers.channels:
                 self.handlers.channels[channel.id] = []
             update_ui(channel)
 
         elif action == 'BTN-ADD-RE':
-            channel: Meta._ChannelData
+            channel: ChannelData
             regex: str
             try:
                 channel, = values[(self, 'CHANNELS')]
@@ -120,7 +70,7 @@ class Meta:
             update_ui(channel)
             self.save()
         elif action == 'BTN-RM-RE':
-            channel: Meta._ChannelData
+            channel: ChannelData
             regex: str
             try:
                 channel, = values[(self, 'CHANNELS')]
@@ -131,8 +81,8 @@ class Meta:
             update_ui(channel)
             self.save()
         elif action == 'BTN-RENAME':
-            channel: Meta._ChannelData
-            songs: List[Meta._Transform]
+            channel: ChannelData
+            songs: List[Transform]
             songs = values[(self, 'NAMES')]
             channel, = values[(self, 'CHANNELS')]
             for song in songs:
@@ -151,7 +101,7 @@ class Meta:
             if channel_id in channels.keys():
                 channels[channel_id].inc()
             else:
-                channels[channel_id] = self._ChannelData(channel_id, channel_map[channel_id])
+                channels[channel_id] = ChannelData(channel_id, channel_map[channel_id])
         layout = [
             [
                 framed(title='Channels',

@@ -35,6 +35,7 @@ class SongDB:
         self.channels = set()
         self.missing_names = set()
         self.missing_artists = set()
+        self.files = set()
         self.songs_by_channel = {}
 
         self.songPath = Path(config.config.paths.songs)
@@ -48,13 +49,14 @@ class SongDB:
             with open(self.dbFile, 'r') as db:
                 self.db = Edict(json.load(db))
                 self.save()
-        self.files = set(f[:-4] for f in listdir(self.songPath)
-                         if isfile(join(self.songPath, f))
-                         and f[-4:] == '.m4a')
+
         self.calc_meta()
 
     def calc_meta(self):
         self.songs_by_channel = {}
+        self.files = set(f[:-4] for f in listdir(self.songPath)
+                         if isfile(join(self.songPath, f))
+                         and f[-4:] == '.m4a')
         for id, entry in self.db.items():
             if entry.ownerId in self.songs_by_channel:
                 self.songs_by_channel[entry.ownerId].append(id)
@@ -87,6 +89,7 @@ class SongDB:
             'ownerId': data.ownerId,
             'status': None,
             'description64': self._encode_or_none(data.description),
+            'image': None,
             'backups': []
         }
         self.db[data.videoId] = song
