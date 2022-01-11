@@ -46,7 +46,7 @@ class SongDB:
             self.db = Edict({})
             self.save()
         else:
-            with open(self.dbFile, 'r') as db:
+            with open(self.dbFile, 'r', encoding='utf-8') as db:
                 self.db = Edict(json.load(db))
                 self.save()
 
@@ -70,8 +70,9 @@ class SongDB:
                 self.channels.add((entry.ownerId, entry.ownerName))
 
     def save(self):
-        with open(self.dbFile, 'w') as db:
-            json.dump(self.db, db, indent=2)
+        data = json.dumps(self.db, indent=2)
+        with open(self.dbFile, 'w', encoding='utf-8') as db:
+            db.write(data)
 
     @staticmethod
     def _encode_or_none(data: str) -> Union[str, None]:

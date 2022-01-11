@@ -35,8 +35,8 @@ class Meta:
         with open(self.handler_path, 'w') as handlers:
             json.dump(self.handlers, handlers, indent=2)
 
-    def handle_event(self, window: sg.Window, event: 'Tuple[Meta, str]', values: dict):
-        def update_ui(channel: Meta._ChannelData):
+    def handle_event(self, window: sg.Window, action: str, values: dict):
+        def update_ui(channel: ChannelData):
             window[(self, 'RE-ACTIVE')].update([r for r in self.handlers.channels[channel.id]])
             songs = [Transform(id) for id in db.songs_by_channel[channel.id]
                      if db.db[id].name is None]
@@ -48,11 +48,10 @@ class Meta:
                     song.result = regex.parse(song.title)
             window[(self, 'NAMES')].update(songs)
 
-        _, action = event
         db = SongDB()
         if action == 'CHANNELS':
             channel: ChannelData
-            channel, = values[event]
+            channel, = values[(self, action)]
             if channel.id not in self.handlers.channels:
                 self.handlers.channels[channel.id] = []
             update_ui(channel)
@@ -92,7 +91,7 @@ class Meta:
             db.save()
             update_ui(channel)
 
-    def get_naming_window(self) -> sg.Window:
+    def get_window(self) -> sg.Window:
         db = SongDB()
         pending_names = [(id, db.db[id].title, db.db[id].ownerId) for id in db.missing_names]
         channel_map = {id: name for id, name in db.channels}
@@ -120,8 +119,8 @@ class Meta:
                     ]
                 ]),
                 sg.Frame(title="Submit", layout=[
-                   [sg.Button(size=(25, 4), button_text='Regex Rename', k=(self, 'BTN-RENAME'))],
-                   [sg.Button(size=(25, 4), button_text='Manual Rename', k=(self, 'BTN-RENAME-MAN'))],
+                    [sg.Button(size=(25, 4), button_text='Regex Rename', k=(self, 'BTN-RENAME'))],
+                    [sg.Button(size=(25, 4), button_text='Manual Rename', k=(self, 'BTN-RENAME-MAN'))],
                 ])
             ],
             [

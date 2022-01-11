@@ -1,7 +1,9 @@
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
+from typing import Optional
 
 from edict import Edict
 
@@ -11,7 +13,8 @@ from pyyoutube import Api
 class Config:
     _instance = None
     _args: argparse.Namespace
-    api_key: str
+    api_key_yt: str
+    api_key_sauce: Optional[str]
     yt: Api
 
     def __new__(cls):
@@ -22,22 +25,27 @@ class Config:
     def __init__(self):
         parser = argparse.ArgumentParser(description="Manage local playlists based on YouTube playlists")
         parser.add_argument('--yt', default=None)
+        parser.add_argument('--sauce', default=None)
         parser.add_argument('-j', '--jobs', type=int, default=1)
 
         self._args = parser.parse_args()
-
         # Get YouTube API Key
         if self._args.yt is None:
             if "YT_API_KEY" in os.environ:
-                self.api_key = os.environ["YT_API_KEY"]
+                self.api_key_yt = os.environ["YT_API_KEY"]
             else:
                 print("No YouTube API Key supplied. Supply an API Key using --yt=<key> or by setting the YT_API_KEY "
                       "environment variable")
                 exit(1)
         else:
-            self.api_key = self._args.yt
+            self.api_key_yt = self._args.yt
 
-        self.yt = Api(api_key=self.api_key)
+        if self._args.sauce is not None:
+            self.api_key_sauce = self._args.sauce
+        else:
+            self.api_key_sauce = None
+
+        self.yt = Api(api_key=self.api_key_yt)
         self.jobs = self._args.jobs
 
         if not Path('listconfig.json').exists():

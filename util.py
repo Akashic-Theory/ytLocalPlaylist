@@ -10,6 +10,18 @@ def framed(elem: sg.Element, *args: object, **kwargs: object) -> sg.Frame:
     return sg.Frame(*args, layout=[[elem]], **kwargs)
 
 
+class Display:
+    data: object
+    disp: str
+
+    def __init__(self, data: object, disp: str):
+        self.data = data
+        self.disp = disp
+
+    def __str__(self):
+        return self.disp
+
+
 class Regex:
     name: str
     pattern: str

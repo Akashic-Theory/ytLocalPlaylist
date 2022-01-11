@@ -9,10 +9,12 @@ from typing import List, Optional
 import PySimpleGUI as sg
 
 import scribe
+from art import ArtRetriever
 from config import Config
 from meta import Meta
 from playlist import Playlist
 from songdb import SongDB
+import urllib3
 
 
 def open_dl_window(num_downloads: int) -> sg.Window:
@@ -60,6 +62,7 @@ def main():
     db = SongDB()
     config = Config()
     meta = Meta()
+    art: Optional[ArtRetriever] = None
     tp = ThreadPoolExecutor(config.jobs)
 
     playlists = [Playlist(**pl) for pl in config.config.playlists]
@@ -67,7 +70,8 @@ def main():
     layout = [prepare_pl_frame(pl) for pl in playlists]
     layout.append([
         sg.Button("Update Database", size=(20, 2), k="DB Update"),
-        sg.Button("Name Tool", size=(20, 2), k="Open Name Tool")
+        sg.Button("Name Tool", size=(20, 2), k="Open Name Tool"),
+        sg.Button("Art Tool", size=(20, 2), k="Open Art Tool")
     ])
 
     main_window = sg.Window("YT Local Playlist Manager", resizable=True,
@@ -81,6 +85,7 @@ def main():
     futures = []
 
     meta_wind: Optional[sg.Window] = None
+    art_wind: Optional[sg.Window] = None
 
     while True:
         window, event, values = sg.read_all_windows(2000, "TIMEOUT")
@@ -90,6 +95,9 @@ def main():
         elif event == sg.WIN_CLOSED:
             if window is meta_wind:
                 meta_wind = None
+            elif window is art_wind:
+                art = None
+                art_wind = None
             window.close()
         # region Tagged Events
         elif event == 'TIMEOUT':
@@ -119,7 +127,11 @@ def main():
             db.save()
         elif event == "Open Name Tool":
             if meta_wind is None:
-                meta_wind = meta.get_naming_window()
+                meta_wind = meta.get_window()
+        elif event == "Open Art Tool":
+            if art is None:
+                art = ArtRetriever()
+                art_wind = art.get_window()
 
         # endregion Tagged Events
 
@@ -134,9 +146,9 @@ def main():
             if action == "copy":
                 songs, _ = pl.results
                 for entry, song in [(db.db[name], f'{name}.m4a') for name in songs if name in db.files]:
-                    if entry.status is None or "N" not in entry.status:
-                        pass
-                    scribe.write_tags(db.songPath, song, entry)
+
+                    if len([flag for flag in "NAP" if flag not in entry.status]) > 0:
+                        scribe.write_tags(db.songPath, song, entry)
                     if not Path.exists(pl.location / song):
                         os.link(db.songPath / song, pl.location / song)
                 db.save()
@@ -152,12 +164,13 @@ def main():
                     for i in range(config.jobs):
                         fut = tp.submit(db.multi_fetch, dl_window[f'DL-{i}'], dl_window[f'PROG-{i}'], dl_queue)
                         futures.append(fut)
-        elif ctx == meta:
-            meta.handle_event(window, event, values)
+        else:
+            ctx.handle_event(window, action, values)
         # endregion Playlist Events
 
     exit()
 
 
 if __name__ == "__main__":
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     main()
