@@ -10,16 +10,23 @@ def write_tags(base: Path, song: str, entry: Edict):
     if not filepath.exists():
         return
 
-    status = ''
-
+    if entry.status is None:
+        status = ''
+    else:
+        status = entry.status
+    write_needed = False
     tags = MP4(filepath).tags
-    if entry.name is not None:
+    tags['\xa9gen'] = 'Nightcore'
+    tags['\xa9alb'] = song.split('.')[0]
+    if entry.name is not None and 'N' not in status:
         tags['\xa9nam'] = entry.name
         status += "N"
-    if entry.artist is not None:
+        write_needed = True
+    if entry.artist is not None and 'A' not in status:
         tags['\xa9ART'] = entry.artist
         status += "A"
-    if entry.image is not None:
+        write_needed = True
+    if entry.image is not None and 'P' not in status:
         ipath = Path(entry.image)
         if ipath.exists():
             with open(ipath, 'rb') as ifile:
@@ -27,8 +34,9 @@ def write_tags(base: Path, song: str, entry: Edict):
             cover = MP4Cover(idata)
             tags['covr'] = [cover]
             print(f'Set cover - {song}')
-    tags['\xa9gen'] = 'Nightcore'
-    tags['\xa9alb'] = song.split('.')[0]
-    tags.save(filepath)
-    entry.status = status
+            status += 'P'
+        write_needed = True
+    if write_needed:
+        tags.save(filepath)
+        entry.status = status
 

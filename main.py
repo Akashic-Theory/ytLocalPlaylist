@@ -145,13 +145,21 @@ def main():
             pl = ctx
             if action == "copy":
                 songs, _ = pl.results
+                mtime = os.path.getmtime(pl.file)
+                print(mtime)
+                pl.song_ids = []
                 for entry, song in [(db.db[name], f'{name}.m4a') for name in songs if name in db.files]:
-
-                    if len([flag for flag in "NAP" if flag not in entry.status]) > 0:
+                    pl.song_ids.append(song)
+                    if entry.status is None or len([flag for flag in "NAP" if flag not in entry.status]) > 0:
                         scribe.write_tags(db.songPath, song, entry)
                     if not Path.exists(pl.location / song):
                         os.link(db.songPath / song, pl.location / song)
+                    elif os.path.getmtime(db.songPath / song) > mtime:
+                        print(f'\t{os.path.getmtime(db.songPath / song)}')
+                        os.remove(pl.location / song)
+                        os.link(db.songPath / song, pl.location / song)
                 db.save()
+                pl.save()
 
             if action == "download" and dl_window is None:
                 songs, _ = pl.results
