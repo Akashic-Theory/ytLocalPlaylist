@@ -95,6 +95,16 @@ class ArtRetriever:
         return ArtRetriever.direct_imgur_image(img_link)
 
     @staticmethod
+    def direct_imgur_album(url: str) -> Path:
+        print(f"{url}")
+        headers = {}
+        resp = requests.get(url, headers=headers)
+        target = r'.*\"og:image\".*?\"((https://)?i\.imgur\.com.*?)(\?.*?)*\".*'
+        img_link: str = re.sub(target, r'\1', resp.text)
+        print(f"{img_link}")
+        return ArtRetriever.direct_imgur_image(img_link)
+
+    @staticmethod
     def direct_konachan(url: str) -> Path:
         resp = requests.get(url)
         target = r'.*original-file-changed.*?href="(.*?)".*'
@@ -235,6 +245,8 @@ class ArtRetriever:
                 return ArtRetriever.direct_pixiv_artwork(url)
             if "imgur.com/gallery" in url:
                 return ArtRetriever.direct_imgur_gallery(url)
+            if "imgur.com/a/" in url:
+                return ArtRetriever.direct_imgur_album(url)
             if "i.pximg.net" in url:
                 return ArtRetriever.direct_pixiv_image(url)
             if "konachan.net" in url:
@@ -264,6 +276,7 @@ class ArtRetriever:
         regexes = [
             (r'.*(pixiv\.net/en/artworks/[0-9]*).*', r'https://www.\1'),
             (r'.*(imgur\.com/gallery/.*?)\s.*', r'https://\1'),
+            (r'.*(imgur\.com/a/.*?)\s.*', r'https://\1'),
             (r'.*(konachan\.net/post/show/[0-9]*).*', r'https://\1')
         ]
         follow_up = [f(re.sub(pattern, repl, desc, flags=re.DOTALL)) for pattern, repl, f in expansion
