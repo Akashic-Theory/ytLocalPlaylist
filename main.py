@@ -122,7 +122,7 @@ def main():
         elif event == "DB Update":
             for pl in playlists:
                 for song in pl.playlist_meta:
-                    if song.videoId not in db.files:
+                    if song.videoId not in db.db:
                         db.add_song(song)
             db.save()
         elif event == "Open Name Tool":
