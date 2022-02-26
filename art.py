@@ -261,7 +261,7 @@ class ArtRetriever:
             confirm_layout
         ]]
 
-        window = sg.Window('wub', layout=layout, finalize=True)
+        window = sg.Window('Art Retrieval', layout=layout, finalize=True)
 
         songs = [Display(id, data.name if data.name is not None else data.title)
                  for id, data
