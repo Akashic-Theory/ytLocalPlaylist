@@ -8,6 +8,7 @@ from queue import Queue
 from typing import Union, Set, Callable, Optional, Tuple, List, Dict
 
 import PySimpleGUI as sg
+import yt_dlp.utils
 from yt_dlp import YoutubeDL, DownloadError
 
 from config import Config
@@ -84,8 +85,10 @@ class SongDB:
     def add_song(self, data: Edict):
         song = {
             'name': None,
+            'guessName': None,
             'title': data.title,
             'artist': None,
+            'guessArtist': None,
             'ownerName': data.ownerName,
             'ownerId': data.ownerId,
             'status': None,
@@ -94,6 +97,23 @@ class SongDB:
             'backups': []
         }
         self.db[data.videoId] = song
+        self.get_guesses(data.videoId)
+
+    def get_guesses(self, id: str):
+        if id not in self.db.keys():
+            return
+        if self.db[id].guessName is None or self.db[id].guessArtist is None:
+            with YoutubeDL() as ydl:
+                try:
+                    data = ydl.extract_info(f'https://www.youtube.com/watch?v={id}', download=False, process=False)
+                except yt_dlp.utils.ExtractorError:
+                    return
+                except yt_dlp.utils.DownloadError:
+                    return
+                if 'track' in data:
+                    self.db[id].guessName = data['track']
+                if 'artist' in data:
+                    self.db[id].guessArtist = data['artist']
 
     def fetch_song(self, id: str, func: Optional[Callable[[dict], None]]):
         ydl_opts = {
