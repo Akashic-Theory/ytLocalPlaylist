@@ -99,10 +99,37 @@ class ArtRetriever:
         print(f"{url}")
         headers = {}
         resp = requests.get(url, headers=headers)
-        target = r'.*\"og:image\".*?\"((https://)?i\.imgur\.com.*?)(\?.*?)*\".*'
+        target = r'.*"og:image".*?"((https://)?i\.imgur\.com.*?)(\?.*?)*\".*'
         img_link: str = re.sub(target, r'\1', resp.text)
         print(f"{img_link}")
         return ArtRetriever.direct_imgur_image(img_link)
+
+    @staticmethod
+    def direct_artstation(url: str) -> Path:
+        headers = {
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                          'Chrome/97.0.4692.71 Safari/537.36',
+            'referer': 'https://www.artstation.com/'
+        }
+        target = r'.*content="(https://cdna\.artstation\.com/p/assets.*?)".*'
+        resp = requests.get(url, headers=headers)
+        redirect = re.sub(target, r'\1', resp.text, flags=re.DOTALL)
+        print(redirect)
+        img_resp = requests.get(redirect, stream=True, verify=False)
+        filename = Path(f'temp.{redirect.rsplit(".", 1)[-1]}')
+        return ArtRetriever.download_chunks(filename, img_resp)
+
+    @staticmethod
+    def direct_deviantart(url: str) -> Optional[Path]:
+        resp = requests.get(url)
+        if not resp.ok:
+            print(f'Failed to fetch - status = {resp.status_code}')
+            return None
+        target = r'.*<main.*?</header>.*?<img.*?src=\"(.*?)\".*'
+        img_link = re.sub(target, r'\1', resp.text, flags=re.DOTALL)
+        img_resp = requests.get(img_link, stream=True, verify=False)
+        filename = Path(f'temp.{"jpg" if resp.headers["content-type"] == "image/jpeg" else "png"}')
+        return ArtRetriever.download_chunks(filename, img_resp)
 
     @staticmethod
     def direct_konachan(url: str) -> Path:
@@ -143,7 +170,7 @@ class ArtRetriever:
         }
         resp = requests.get('https://saucenao.com/search.php', params=params)
         data = Edict(json.loads(resp.text))
-        results = [ArtRetriever.expand_pixiv_id(res.data.pixiv_id) for res in data.results if 'pixiv_id' in res.data]
+        results = ArtRetriever.expand_pixiv_id([res.data.pixiv_id for res in data.results if 'pixiv_id' in res.data])
         self._extra_links = results
         self._dl_sources.update(self._base_links + self._extra_links)
 
@@ -157,15 +184,20 @@ class ArtRetriever:
         return filepath
 
     @staticmethod
-    def expand_pixiv_id(id: str) -> str:
-        return f'https://www.pixiv.net/en/artworks/{id}'
+    def expand_pixiv_id(ids: List[str]) -> List[str]:
+        return [f'https://www.pixiv.net/en/artworks/{id}' for id in ids]
 
     @staticmethod
-    def expand_bitly(link: str) -> str:
-        resp = requests.get(link)
+    def expand_bitly(links: List[str]) -> List[str]:
         target = r'.*long_url": "(.*?)".*'
-        res = re.sub(target, r'\1', resp.text, flags=re.DOTALL)
-        return res
+        return [re.sub(target, r'\1', resp.text, flags=re.DOTALL)
+                for resp in [requests.get(link) for link in links]]
+    @staticmethod
+    def expand_googl(links: List[str]) -> List[str]:
+        target = r'.*data:(\[.*?\]), sideChannel.*'
+
+        return [json.loads(re.sub(target, r'\1', resp.text, flags=re.DOTALL))[2]
+                for resp in [requests.get(link) for link in links]]
 
     def load_image(self, img_path: Union[Path, str]):
         self.img = Image.open(img_path)
@@ -247,10 +279,16 @@ class ArtRetriever:
                 return ArtRetriever.direct_imgur_gallery(url)
             if "imgur.com/a/" in url:
                 return ArtRetriever.direct_imgur_album(url)
+            if "imgur.com" in url:
+                return ArtRetriever.direct_imgur_album(url)
             if "i.pximg.net" in url:
                 return ArtRetriever.direct_pixiv_image(url)
-            if "konachan.net" in url:
+            if "konachan." in url:
                 return ArtRetriever.direct_konachan(url)
+            if "deviantart.com" in url:
+                return ArtRetriever.direct_deviantart(url)
+            if "artstation.com" in url:
+                return ArtRetriever.direct_artstation(url)
             if "yt:" in url:
                 return self.direct_yt(self._cur_song_id)
             if "sauce:" in url:
@@ -269,22 +307,26 @@ class ArtRetriever:
         return None
 
     def get_primary_links(self, desc: str) -> List[str]:
-        expansion: List[Tuple[str, str, Callable]] = [
-            (r'.*?(bit\.ly/.*?)\s.*', r'https://\1+', ArtRetriever.expand_bitly),
-            (r'.*pixiv.*illust_id=([0-9]*).*', r'\1', ArtRetriever.expand_pixiv_id)
+        expansions: List[Tuple[str, Callable, Callable]] = [
+            (r'.*?(bit\.ly/.*?)\s.*', lambda x: f'https://{x}+', ArtRetriever.expand_bitly),
+            (r'.*?(goo\.gl/.*?)\s.*', lambda x: f'https://{x}?d=1', ArtRetriever.expand_googl),
         ]
         regexes = [
             (r'.*(pixiv\.net/en/artworks/[0-9]*).*', r'https://www.\1'),
+            (r'.*pixiv.*illust_id=([0-9]*).*', r'https://www.pixiv.net/en/artworks/\1'),
             (r'.*(imgur\.com/gallery/.*?)\s.*', r'https://\1'),
-            (r'.*(imgur\.com/a/.*?)\s.*', r'https://\1'),
-            (r'.*(konachan\.net/post/show/[0-9]*).*', r'https://\1')
+            (r'.*(imgur\.com/.*?)\s.*', r'https://\1'),
+            (r'.*(deviantart\.com/.*?/art/.*?)\s.*', r'https://\1'),
+            (r'.*(konachan\.((net)|(com))/post/show/[0-9]*).*', r'https://\1'),
+            (r'.*(artstation\.com/artwork/.*?)(\s|$).*', r'https://\1')
         ]
-        follow_up = [f(re.sub(pattern, repl, desc, flags=re.DOTALL)) for pattern, repl, f in expansion
+        follow_up = [f(map(mapper, re.findall(pattern, desc))) for pattern, mapper, f in expansions
                      if re.match(pattern, desc, flags=re.DOTALL) is not None]
+        expanded = [item for sublist in follow_up for item in sublist]
         results = [re.sub(pattern, repl, desc, flags=re.DOTALL) for pattern, repl in regexes
                    if re.match(pattern, desc, flags=re.DOTALL) is not None]
-        print(follow_up)
-        for extra in follow_up:
+        print(*follow_up)
+        for extra in expanded:
             for pattern, repl in regexes:
                 if re.match(pattern, extra):
                     results.append(re.sub(pattern, repl, extra))
