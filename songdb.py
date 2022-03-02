@@ -83,7 +83,7 @@ class SongDB:
             return None
 
     def add_song(self, data: Edict):
-        song = {
+        song = Edict({
             'name': None,
             'guessName': None,
             'title': data.title,
@@ -95,7 +95,7 @@ class SongDB:
             'description64': self._encode_or_none(data.description),
             'image': None,
             'backups': []
-        }
+        })
         self.db[data.videoId] = song
         self.get_guesses(data.videoId)
 
