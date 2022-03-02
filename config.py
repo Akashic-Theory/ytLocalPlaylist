@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -41,10 +40,7 @@ class Config:
         else:
             self.api_key_yt = self._args.yt
 
-        if self._args.sauce is not None:
-            self.api_key_sauce = self._args.sauce
-        else:
-            self.api_key_sauce = None
+        self.api_key_sauce = self._args.sauce
 
         self.yt = Api(api_key=self.api_key_yt)
         self.jobs = self._args.jobs
