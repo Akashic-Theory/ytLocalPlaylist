@@ -15,6 +15,7 @@ class Config:
     _args: argparse.Namespace
     api_key_yt: str
     api_key_sauce: Optional[str]
+    config: Edict
     yt: Api
 
     def __new__(cls):
