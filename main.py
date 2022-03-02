@@ -10,6 +10,7 @@ import PySimpleGUI as sg
 
 import scribe
 from art import ArtRetriever
+from artist import ArtistRetriever
 from config import Config
 from meta import Meta
 from playlist import Playlist
@@ -63,6 +64,7 @@ def main():
     config = Config()
     meta = Meta()
     art: Optional[ArtRetriever] = None
+    artist: Optional[ArtistRetriever] = None
     tp = ThreadPoolExecutor(config.jobs)
 
     playlists = [Playlist(**pl) for pl in config.config.playlists]
@@ -71,7 +73,8 @@ def main():
     layout.append([
         sg.Button("Update Database", size=(20, 2), k="DB Update"),
         sg.Button("Name Tool", size=(20, 2), k="Open Name Tool"),
-        sg.Button("Art Tool", size=(20, 2), k="Open Art Tool")
+        sg.Button("Art Tool", size=(20, 2), k="Open Art Tool"),
+        sg.Button("Artist Tool", size=(20, 2), k="Open Artist Tool")
     ])
 
     main_window = sg.Window("YT Local Playlist Manager", resizable=True,
@@ -86,6 +89,7 @@ def main():
 
     meta_wind: Optional[sg.Window] = None
     art_wind: Optional[sg.Window] = None
+    artist_wind: Optional[sg.Window] = None
 
     while True:
         window, event, values = sg.read_all_windows(2000, "TIMEOUT")
@@ -98,6 +102,9 @@ def main():
             elif window is art_wind:
                 art = None
                 art_wind = None
+            elif window is artist_wind:
+                artist = None
+                artist_wind = None
             window.close()
         # region Tagged Events
         elif event == 'TIMEOUT':
@@ -132,6 +139,10 @@ def main():
             if art is None:
                 art = ArtRetriever()
                 art_wind = art.get_window()
+        elif event == "Open Artist Tool":
+            if art is None:
+                artist = ArtistRetriever()
+                artist_wind = artist.get_window()
 
         # endregion Tagged Events
 
