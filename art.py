@@ -28,11 +28,20 @@ class ArtRetriever:
     _btn_confirm: sg.Button
     _img_status: sg.Text
 
+    # Search Path
+    _path_frame: sg.Frame
+    _path_disp: sg.Text
+    _btn_reset_path: sg.Button
+    _btn_path: sg.Button
+    _btn_path_load: sg.Button
+
     _cur_song_id: Optional[str]
+    _cur_sel_song: Optional[Display[str]]
     _base_links: List[str]
     _extra_links: List[str]
 
     def __init__(self):
+        config = Config()
         slider_opts = {
             'resolution': 1,
             'disabled': True,
@@ -41,6 +50,7 @@ class ArtRetriever:
         }
         self.img = None
         self._cur_song_id = None
+        self._cur_sel_song = None
         self._base_links = []
         self._extra_links = []
         self._img = sg.Image(size=(500, 500), k=(self, "image"))
@@ -62,6 +72,18 @@ class ArtRetriever:
         self._img_status = sg.Text(text='--')
         self._sel_song = sg.Frame(title="Song", title_location=sg.TITLE_LOCATION_TOP,
                                   k=(self, 'sel_song'), layout=[[self._img_status], [self._btn_confirm]])
+        self._path_disp = sg.Text(text=config.config.paths.art)
+        self._btn_path = sg.FolderBrowse(button_text="...", size=(5, 2), enable_events=True, k=(self, 'path-set'),
+                                         initial_folder=config.config.paths.art)
+        self._btn_reset_path = sg.Button(button_text="Reset", size=(30, 2), expand_x=True,
+                                         enable_events=True, k=(self, 'path-reset'))
+        self._btn_path_load = sg.Button(button_text="Load", size=(30, 2), expand_x=True,
+                                        enable_events=True, k=(self, 'path-load'))
+        self._path_frame = sg.Frame(title="Image Path", title_location=sg.TITLE_LOCATION_TOP, layout=[
+            [self._path_disp],
+            [self._btn_reset_path, sg.Column([[self._btn_path]])],
+            [self._btn_path_load]
+        ])
 
     @staticmethod
     def direct_pixiv_artwork(url: str) -> Path:
@@ -192,6 +214,7 @@ class ArtRetriever:
         target = r'.*long_url": "(.*?)".*'
         return [re.sub(target, r'\1', resp.text, flags=re.DOTALL)
                 for resp in [requests.get(link) for link in links]]
+
     @staticmethod
     def expand_googl(links: List[str]) -> List[str]:
         target = r'.*data:(\[.*?\]), sideChannel.*'
@@ -253,7 +276,8 @@ class ArtRetriever:
             [self._btn_fetch]
         ])
         confirm_layout = sg.Column(expand_y=True, layout=[
-            [self._sel_song]
+            [self._sel_song],
+            [self._path_frame]
         ])
         layout = [[
             dl_layout,
@@ -338,25 +362,26 @@ class ArtRetriever:
         db = SongDB()
         match action:
             case 'song':
-                song_id = values[(self, 'song')][0].data
-                desc = b64decode(db.db[song_id].description64.encode('utf-8')).decode('utf-8')
+                self._cur_sel_song = values[(self, 'song')][0]
+                desc = b64decode(db.db[self._cur_sel_song.data].description64.encode('utf-8')).decode('utf-8')
                 self._desc.update(desc)
                 self._dl_sources.update(self.get_primary_links(desc))
             case 'sources':
                 source, = values[(self, 'sources')]
                 self._target.update(source)
             case 'fetch':
-                song_data = values[(self, 'song')][0]
-                song_name, song_id = song_data.disp, song_data.data
-                self._cur_song_id = song_id
+                song = self._cur_sel_song
+                if song is None:
+                    return
+                self._cur_song_id = song.data
                 target = values[(self, 'target')]
                 path = self.handle_link(target)
                 if path is None:
                     return
                 self.load_image(path)
-                self._sel_song.update(song_name, True)
+                self._sel_song.update(song.disp, True)
                 s_text, s_col = ('Image NOT Applied', '#ffbebc') \
-                    if db.db[song_id].image is None \
+                    if db.db[song.data].image is None \
                     else ('Image Applied', '#adf7b6')
                 self._img_status.update(value=s_text, text_color=s_col)
                 self.draw_image(values)
@@ -364,10 +389,23 @@ class ArtRetriever:
                 if self._cur_song_id is None:
                     return
                 x, y, s = (values[(self, key)] for key in ('hPos', 'vPos', 'size'))
-                config = Config()
-                fp = Path(config.config.paths.art) / f'{self._cur_song_id}.jpg'
+                fp = Path(self._path_disp.get()) / f'{self._cur_song_id}.jpg'
                 self.img.crop((x, y, x + s, y + s)).resize((300, 300)).convert('RGB').save(fp, format='JPEG')
                 db.db[self._cur_song_id].image = str(fp)
                 db.save()
                 self._img_status.update('Image Applied', text_color='#adf7b6')
+            case 'path-reset':
+                config = Config()
+                self._path_disp.update(config.config.paths.art)
+            case 'path-set':
+                self._path_disp.update(values[(self, action)])
+            case 'path-load':
+                if self._cur_sel_song is None:
+                    return
+                path = Path(self._path_disp.get()) / f'{self._cur_sel_song.data}.jpg'
+                print(path)
+                if path is None or not path.exists():
+                    return
+                self._cur_song_id = self._cur_sel_song.data
+                self.load_image(path)
         self.draw_image(values)

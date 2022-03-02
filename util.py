@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Optional, Generic, TypeVar
 
 import PySimpleGUI as sg
 
@@ -10,8 +10,11 @@ def framed(elem: sg.Element, *args: object, **kwargs: object) -> sg.Frame:
     return sg.Frame(*args, layout=[[elem]], **kwargs)
 
 
-class Display:
-    data: object
+T = TypeVar('T')
+
+
+class Display(Generic[T]):
+    data: T
     disp: str
 
     def __init__(self, data: object, disp: str):
