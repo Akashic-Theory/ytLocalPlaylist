@@ -1,0 +1,46 @@
+{
+    "title": "SongDB",
+    "type": "object",
+    "patternProperties": {
+        "^[-_0-9a-zA-Z]{11}$": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": ["string", "null"]
+                },
+                "guessName": {
+                    "type": ["string", "null"]
+                },
+                "title": {
+                    "type": ["string", "null"]
+                },
+                "artist": {
+                    "type": ["string", "null"]
+                },
+                "guessArtist": {
+                    "type": ["string", "null"]
+                },
+                "ownerName": {
+                    "type": "string"
+                },
+                "ownerId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": ["string", "null"]
+                },
+                "description64": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": ["string", "null"]
+                },
+                "backups": {
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false
+}

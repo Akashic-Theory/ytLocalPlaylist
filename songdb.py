@@ -10,6 +10,7 @@ from typing import Union, Set, Callable, Optional, Tuple, List, Dict
 import PySimpleGUI as sg
 import yt_dlp.utils
 from yt_dlp import YoutubeDL, DownloadError
+from jsonschema import validate
 
 from config import Config
 from edict import Edict
@@ -25,6 +26,7 @@ class SongDB:
     songs_by_channel: Dict[str, List[str]]
     missing_names: Set[str]
     missing_artists: Set[str]
+    schema: dict
 
     def __new__(cls):
         if cls._instance is None:
@@ -41,6 +43,11 @@ class SongDB:
 
         self.songPath = Path(config.config.paths.songs)
         self.dbFile = self.songPath / "songDB.json"
+        if not Path('dbschema.json').exists():
+            print('No db validation schema found... Exiting')
+            exit(2)
+        with open('dbschema.json', 'r', encoding='utf-8') as schema:
+            self.schema = json.load(schema)
         if not self.songPath.exists():
             self.songPath.mkdir(parents=True)
         if not self.dbFile.exists():
@@ -71,6 +78,7 @@ class SongDB:
                 self.channels.add((entry.ownerId, entry.ownerName))
 
     def save(self):
+        validate(self.db, self.schema)
         data = json.dumps(self.db, indent=2)
         with open(self.dbFile, 'w', encoding='utf-8') as db:
             db.write(data)
