@@ -8,12 +8,15 @@ from edict import Edict
 
 from pyyoutube import Api
 
+from lastfm import LastFM
+
 
 class Config:
     _instance = None
     _args: argparse.Namespace
     api_key_yt: str
     api_key_sauce: Optional[str]
+    last_fm: Optional[LastFM]
     config: Edict
     yt: Api
 
@@ -26,6 +29,7 @@ class Config:
         parser = argparse.ArgumentParser(description="Manage local playlists based on YouTube playlists")
         parser.add_argument('--yt', default=None)
         parser.add_argument('--sauce', default=None)
+        parser.add_argument('--last-fm', default=None)
         parser.add_argument('-j', '--jobs', type=int, default=1)
 
         self._args = parser.parse_args()
@@ -41,6 +45,7 @@ class Config:
             self.api_key_yt = self._args.yt
 
         self.api_key_sauce = self._args.sauce
+        self.last_fm = LastFM(self._args.last_fm) if self._args.last_fm is not None else None
 
         self.yt = Api(api_key=self.api_key_yt)
         self.jobs = self._args.jobs
