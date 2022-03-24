@@ -2,12 +2,12 @@ if (DEFINED ENV_WX_CONFIG)
     set (ENV{WX_CONFIG} ${ENV_WX_CONFIG})
 endif()
 
-set(SRCS main.cpp)
+set(SRCS AppFrame.cpp AppFrame.h main.cpp)
 
 add_executable(ytlp WIN32 ${SRCS})
 
 
-target_link_libraries(ytlp PRIVATE wx::core)
+target_link_libraries(ytlp PRIVATE wx::core wx::aui)
 
 set_target_properties(ytlp PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
