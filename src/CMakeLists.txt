@@ -6,7 +6,7 @@ set(SRCS AppFrame.cpp AppFrame.h main.cpp)
 
 add_executable(ytlp WIN32 ${SRCS})
 
-
+target_compile_options(ytlp PRIVATE -g -Wall -Wextra)
 target_link_libraries(ytlp PRIVATE wx::core wx::aui)
 
 set_target_properties(ytlp PROPERTIES
