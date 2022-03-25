@@ -10,7 +10,15 @@
 
 class AppFrame : public wxFrame {
 private:
-	wxAuiManager m_mgr;
+	// IDS
+	enum {
+		ID_NEW_PLAYLIST = wxID_HIGHEST + 1
+	};
+
+	wxAuiManager mgr;
+
+	wxMenu* prepareMenuFile(wxMenuBar* bar = nullptr);
+	wxMenu* prepareMenuHelp(wxMenuBar* bar = nullptr);
 public:
 	AppFrame() = delete;
 	AppFrame(AppFrame& other) = delete;
