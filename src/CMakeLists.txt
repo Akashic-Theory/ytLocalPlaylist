@@ -2,7 +2,7 @@ if (DEFINED ENV_WX_CONFIG)
     set (ENV{WX_CONFIG} ${ENV_WX_CONFIG})
 endif()
 
-set(SRCS AppFrame.cpp AppFrame.h main.cpp)
+set(SRCS AppFrame.cpp AppFrame.h main.cpp SongMetaData.cpp SongMetaData.h)
 
 add_executable(ytlp WIN32 ${SRCS})
 
