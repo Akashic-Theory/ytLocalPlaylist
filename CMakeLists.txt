@@ -11,6 +11,6 @@ add_subdirectory(3p)
 add_subdirectory(src)
 
 if (YTLP-BUILD_TESTS)
-    # add_subdirectory(tests)
+    add_subdirectory(tests)
 endif ()
 
