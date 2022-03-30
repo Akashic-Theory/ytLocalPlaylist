@@ -1,9 +1,12 @@
 find_package(wxWidgets QUIET)
 
-if (wxWidgets_FOUND)
-    set(YTLP-USE_BUNDLED_WX OFF CACHE BOOL "Use bundled wxWidgets")
-else()
-    set(YTLP-USE_BUNDLED_WX ON CACHE BOOL "Use bundled wxWidgets")
+if (NOT DEFINED YTLP-USE_BUNDLED_WX)
+    option(YTLP-USE_BUNDLED_WX "Use bundled wxWidgets" OFF)
+    if (NOT wxWidgets_FOUND)
+        set(3P-EXIT "${3P-EXIT}\n- WxWidgets" CACHE INTERNAL "")
+        set(YTLP-USE_BUNDLED_WX ON CACHE BOOL "Use bundled wxWidgets" FORCE)
+        return()
+    endif ()
 endif ()
 
 if (YTLP-USE_BUNDLED_WX)
