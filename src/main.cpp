@@ -2,17 +2,18 @@
 // Created by Mayank on 3/24/2022.
 //
 
-#include "wx/wx.h"
-#include "AppFrame.h"
+#include "raylib-cpp.hpp"
 
-class YTLP : public wxApp {
-public:
-	bool OnInit() override {
-		wxFrame* frame = new AppFrame(nullptr);
-		SetTopWindow(frame);
-		frame->Show();
-		return true;
-	}
-};
+int main () {
+    int screen[] = {800, 600};
+    raylib::Color textCol = raylib::Color::Pink();
+    raylib::Window window(screen[0], screen[1], "Raylib Test");
+    SetTargetFPS(60);
 
-wxIMPLEMENT_APP(YTLP);
+    while (!window.ShouldClose()) {
+        window.BeginDrawing()
+              .ClearBackground(raylib::Color::LightGray());
+        raylib::DrawText("Test", 300, 200, 10, textCol);
+        window.EndDrawing();
+    }
+}

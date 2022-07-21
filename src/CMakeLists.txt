@@ -1,14 +1,10 @@
-if (DEFINED ENV_WX_CONFIG)
-    set (ENV{WX_CONFIG} ${ENV_WX_CONFIG})
-endif()
+set(SRCS SongMetaData.cpp SongMetaData.h)
+set(LIBS raylib raylib_cpp)
 
-set(SRCS AppFrame.cpp AppFrame.h SongMetaData.cpp SongMetaData.h)
-set(LIBS wx::core wx::aui)
-
-add_executable(ytlp WIN32 main.cpp ${SRCS})
+add_executable(ytlp main.cpp ${SRCS})
 
 target_compile_options(ytlp PRIVATE -g -Wall -Wextra)
-target_link_libraries(ytlp PRIVATE ${LIBS})
+target_link_libraries(ytlp PUBLIC ${LIBS})
 
 set_target_properties(ytlp PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}

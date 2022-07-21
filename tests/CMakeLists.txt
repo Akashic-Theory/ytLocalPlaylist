@@ -1,3 +1,4 @@
+find_package(Catch2 3.1 REQUIRED)
 set(TEST_SRCS SongMetaDataTest.cpp)
 
 add_executable(run_tests ${TEST_SRCS})
