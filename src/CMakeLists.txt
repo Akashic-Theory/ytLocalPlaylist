@@ -1,3 +1,13 @@
+if (YTLP-USE_BUNDLED_RAYLIB)
+    FetchContent_MakeAvailable(raylib)
+else()
+    find_package(raylib 4 REQUIRED)
+endif ()
+if (YTLP-USE_BUNDLED_RAYLIB_CPP)
+    FetchContent_MakeAvailable(raylib_cpp)
+else()
+    find_package(raylib_cpp REQUIRED)
+endif ()
 set(SRCS SongMetaData.cpp SongMetaData.h)
 set(LIBS raylib raylib_cpp)
 

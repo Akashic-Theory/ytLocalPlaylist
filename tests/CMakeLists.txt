@@ -1,4 +1,8 @@
-find_package(Catch2 3.1 REQUIRED)
+if (YTLP-USE_BUNDLED_CATCH)
+    FetchContent_MakeAvailable(Catch2)
+else()
+    find_package(Catch2 3.1 REQUIRED)
+endif()
 set(TEST_SRCS SongMetaDataTest.cpp)
 
 add_executable(run_tests ${TEST_SRCS})

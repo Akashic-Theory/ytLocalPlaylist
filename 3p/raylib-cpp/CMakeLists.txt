@@ -1,6 +1,5 @@
-find_package(raylib_cpp QUIET)
-
 if (NOT DEFINED YTLP-USE_BUNDLED_RAYLIB_CPP)
+    find_package(raylib_cpp QUIET)
     option(YTLP-USE_BUNDLED_RAYLIB_CPP "Use bundled Raylib-CPP" OFF)
     if (NOT raylib_cpp_FOUND)
         set(3P-EXIT "${3P-EXIT}\n- Raylib-CPP" CACHE INTERNAL "")
@@ -18,6 +17,4 @@ if (YTLP-USE_BUNDLED_RAYLIB_CPP)
             GIT_TAG v4.2.3
     )
     FetchContent_MakeAvailable(raylib_cpp)
-else()
-    find_package(raylib_cpp REQUIRED)
 endif ()
