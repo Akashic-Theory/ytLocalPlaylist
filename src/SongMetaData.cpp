@@ -1,7 +1,3 @@
-//
-// Created by Mayank on 3/25/2022.
-//
-
 #include "SongMetaData.h"
 
 namespace {

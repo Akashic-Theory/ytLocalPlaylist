@@ -1,7 +1,3 @@
-//
-// Created by Mayank on 3/24/2022.
-//
-
 #include "raylib-cpp.hpp"
 
 int main () {

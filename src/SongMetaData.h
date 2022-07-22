@@ -1,7 +1,3 @@
-//
-// Created by Mayank on 3/25/2022.
-//
-
 #ifndef YTLP_SONGMETADATA_H
 #define YTLP_SONGMETADATA_H
 
