@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include "../src/SongMetaData.h"
+#include "SongMetaData.h"
 
 TEST_CASE("SongMetaData id conversions are valid", "[metadata][SongMetaData]") {
 	SongMetaData dat{};
