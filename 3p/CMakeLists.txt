@@ -1,5 +1,4 @@
 add_subdirectory(Raylib)
-add_subdirectory(raylib-cpp)
 
 if (YTLP-BUILD_TESTS)
     add_subdirectory(Catch2)
