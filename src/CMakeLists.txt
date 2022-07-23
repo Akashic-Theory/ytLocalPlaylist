@@ -8,8 +8,8 @@ if (YTLP-USE_BUNDLED_RAYLIB_CPP)
 else()
     find_package(raylib_cpp REQUIRED)
 endif ()
-set(SRCS SongMetaData.cpp SongMetaData.h ui/Button.hpp)
-set(LIBS raylib raylib_cpp)
+set(SRCS SongMetaData.cpp SongMetaData.h ui/Button.h ui/Button.cpp)
+set(LIBS raylib)
 
 add_executable(ytlp main.cpp ${SRCS})
 
@@ -22,7 +22,7 @@ set_target_properties(ytlp PROPERTIES
 
 if (YTLP-BUILD_TESTS)
     add_library(ytlp-lib ${SRCS})
-    target_link_libraries(ytlp-lib ${LIBS})
+    target_include_directories(ytlp-lib PUBLIC ${raylib_INCLUDE_DIR})
 endif ()
 
 add_custom_command(TARGET ytlp POST_BUILD

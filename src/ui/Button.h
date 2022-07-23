@@ -1,6 +1,6 @@
 // TODO: UNIT TESTS
-#ifndef YTLP_BUTTON_HPP
-#define YTLP_BUTTON_HPP
+#ifndef YTLP_BUTTON_H
+#define YTLP_BUTTON_H
 
 #include <string>
 #include <utility>
@@ -32,32 +32,9 @@ public:
         return {_pos.x + 0.5f * _size.x, _pos.y + 0.5f * _size.y };
     }
 
-    Button& process() {
-        bool mouseOver = CheckCollisionPointRec(GetMousePosition(), {_pos.x, _pos.y, _size.x, _size.y});
-        switch (_state) {
-            case BASE: {
-                _state = mouseOver ? HOVER : BASE;
-            } break;
-            case HOVER: {
-                _state = mouseOver
-                         ? (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) ? PRESS : HOVER)
-                         : BASE;
-            } break;
-            case PRESS: {
-                _state = mouseOver
-                         ? (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) ? (_action(), BASE) : PRESS )
-                         : BASE;
-            } break;
-        }
-        return *this;
-    }
+    Button& process();
 
-    Button& draw() const { // NOLINT(modernize-use-nodiscard)
-        DrawRectangleV(_pos, _size, (&_baseCol)[_state]);
-        Vector2 textSize = MeasureTextEx(_font, _text.c_str(), _fontSize, 1.0f);
-        DrawTextEx(_font, _text.c_str(), { _pos.x + 0.5f * (_size.x - textSize.x), _pos.y + 0.5f * (_size.y - textSize.y) }, _fontSize, 1.0f, _textCol);
-        return const_cast<Button &>(*this);
-    }
+    Button& draw() const; // NOLINT(modernize-use-nodiscard)
 
     // Getters/Setters
     Button& text(const std::string& text) { _text = text; return *this; }
@@ -89,4 +66,4 @@ public:
 };
 
 
-#endif //YTLP_BUTTON_HPP
+#endif //YTLP_BUTTON_H
