@@ -1,15 +1,23 @@
-#include "raylib-cpp.hpp"
+#include <iostream>
+#include "raylib.h"
+#include "ui/Button.hpp"
 
 int main () {
-    int screen[] = {800, 600};
-    raylib::Color textCol = raylib::Color::Pink();
-    raylib::Window window(screen[0], screen[1], "Raylib Test");
+    InitWindow(800, 600, "YouTube Playlist Manager");
     SetTargetFPS(60);
 
-    while (!window.ShouldClose()) {
-        window.BeginDrawing()
-              .ClearBackground(raylib::Color::LightGray());
-        raylib::DrawText("Test", 300, 200, 10, textCol);
-        window.EndDrawing();
+    Button button("Click Me", {350, 280}, {100, 40}, 20);
+    button.action([]() -> void {
+        std::cout << GetTime() << std::endl;
+    });
+
+    button();
+    while (!WindowShouldClose()) {
+        BeginDrawing();
+        {
+            ClearBackground(DARKPURPLE);
+            button.process().draw();
+        }
+        EndDrawing();
     }
 }

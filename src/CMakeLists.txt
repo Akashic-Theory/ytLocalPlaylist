@@ -8,7 +8,7 @@ if (YTLP-USE_BUNDLED_RAYLIB_CPP)
 else()
     find_package(raylib_cpp REQUIRED)
 endif ()
-set(SRCS SongMetaData.cpp SongMetaData.h)
+set(SRCS SongMetaData.cpp SongMetaData.h ui/Button.hpp)
 set(LIBS raylib raylib_cpp)
 
 add_executable(ytlp main.cpp ${SRCS})
