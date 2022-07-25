@@ -7,7 +7,9 @@ endif ()
 if (DEFINED 3P-EXIT)
     message(WARNING "Failed to find some dependencies:"
         "${3P-EXIT}"
-        "\nSet missing dependencies to automatically be fetched on next configure.")
+        "\nSetting missing dependencies to automatically be fetched on next configure."
+        "\nThis is NOT an error unless you wish to use local installs of the libraries"
+        "\nSimply re-configure to fetch missing dependencies")
     unset(3P-EXIT CACHE)
     message(FATAL_ERROR "Confirm options and re-configure to continue...")
 endif ()
