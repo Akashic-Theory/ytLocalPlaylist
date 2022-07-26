@@ -1,4 +1,5 @@
 add_subdirectory(Raylib)
+add_subdirectory(json)
 
 if (YTLP-BUILD_TESTS)
     add_subdirectory(Catch2)

@@ -4,7 +4,7 @@ else()
     find_package(raylib 4 REQUIRED)
 endif ()
 set(SRCS SongMetaData.cpp SongMetaData.h ui/Button.h ui/Button.cpp)
-set(LIBS raylib)
+set(LIBS raylib nlohmann_json::nlohmann_json)
 
 add_executable(ytlp main.cpp ${SRCS})
 
