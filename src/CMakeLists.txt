@@ -3,8 +3,8 @@ if (YTLP-USE_BUNDLED_RAYLIB)
 else()
     find_package(raylib 4 REQUIRED)
 endif ()
-set(SRCS SongMetaData.cpp SongMetaData.h ui/Button.h ui/Button.cpp)
-set(LIBS raylib nlohmann_json::nlohmann_json)
+set(SRCS SongMetaData.cpp SongMetaData.h ui/Button.h ui/Button.cpp Settings.cpp Settings.h)
+set(LIBS raylib nlohmann_json::nlohmann_json tiny-process-library)
 
 add_executable(ytlp main.cpp ${SRCS})
 
